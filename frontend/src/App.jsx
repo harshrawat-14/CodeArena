@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
+// Import Firebase auth service
+import authService from './services/authService';
+
 // Import components
-import Auth from './components/Auth';
+import Login from './components/Login';
 import Header from './components/Header';
+import UserProfile from './components/UserProfile';
 import ProblemStatement from './components/ProblemStatement';
 import CodeEditor from './components/CodeEditor';
 import LanguageSelector from './components/LanguageSelector';
@@ -16,6 +20,8 @@ import KeyboardShortcuts from './components/KeyboardShortcuts';
 function App() {
   // Authentication state
   const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
   
   // Add console logging for debugging
   console.log('App rendering, user:', user);
@@ -47,41 +53,44 @@ int main() {
 
   // Check for existing user session on component mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
+    // Set up Firebase auth state listener
+    const unsubscribe = authService.onAuthStateChange((firebaseUser) => {
+      if (firebaseUser) {
+        // Convert Firebase user to our user format
+        const userData = {
+          id: firebaseUser.uid,
+          username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || 'User',
+          photoURL: firebaseUser.photoURL,
+          rating: 1200, // Will be updated from backend profile
+          solvedProblems: 0 // Will be updated from backend profile
+        };
+        setUser(userData);
+      } else {
+        setUser(null);
       }
-    }
-    
-    // AOS initialization temporarily disabled for debugging
-    // if (typeof window !== 'undefined' && window.AOS) {
-    //   try {
-    //     window.AOS.init({
-    //       duration: 1000,
-    //       once: true,
-    //       easing: 'ease-out-cubic',
-    //       disable: false
-    //     });
-    //   } catch (error) {
-    //     console.warn('AOS initialization failed:', error);
-    //   }
-    // }
-  }, []);
+      setIsAuthLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []); // Remove authService from dependencies since it's a singleton
 
   const handleLogin = (userData) => {
     setUser(userData);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-    setCode('');
-    setOutput('');
-    setAiReview('');
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      setUser(null);
+      setCode('');
+      setOutput('');
+      setAiReview('');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleRunCode = async () => {
@@ -95,8 +104,18 @@ int main() {
       input,
     };
 
+    // Add authentication token if user is logged in
+    const headers = {};
+    if (user && authService.authToken) {
+      headers.Authorization = `Bearer ${authService.authToken}`;
+    }
+
     try {
-      const { data } = await axios.post(`http://localhost:${import.meta.env.VITE_BACKEND_URL}/run`, payload);
+      const { data } = await axios.post(
+        `http://localhost:${import.meta.env.VITE_BACKEND_URL || '8000'}/run`, 
+        payload,
+        { headers }
+      );
       setOutput(data.output);
       setLastRunTime(Date.now());
       setExecutionTime(Date.now() - startTime);
@@ -133,17 +152,29 @@ int main() {
     }
   };
 
-  // If user is not logged in, show auth component
+  // Show loading while checking authentication
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-purple-900">
+        <div className="text-center text-white">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not logged in, show login component
   if (!user) {
     try {
-      return <Auth onLogin={handleLogin} />;
+      return <Login onLogin={handleLogin} />;
     } catch (error) {
-      console.error('Auth component error:', error);
+      console.error('Login component error:', error);
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-purple-900">
           <div className="text-center text-white">
-            <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+            <h1 className="text-2xl font-bold mb-4">Error Loading Login</h1>
+            <p className="text-red-300">{error.message}</p>
           </div>
         </div>
       );
@@ -167,7 +198,11 @@ int main() {
         </div>
         
         <div className="relative z-10">
-          <Header user={user} onLogout={handleLogout} />
+          <Header 
+            user={user} 
+            onLogout={handleLogout} 
+            onShowProfile={() => setShowProfile(true)}
+          />
         
         {/* Hero Section with Spectacular Design */}
         <div className="relative bg-gradient-to-r from-indigo-900 via-purple-900 to-pink-900 text-white py-20 overflow-hidden">
@@ -354,6 +389,15 @@ int main() {
             Refresh Page
           </button>
         </div>
+
+        {/* User Profile Modal */}
+        {showProfile && (
+          <UserProfile 
+            user={user}
+            authService={authService}
+            onClose={() => setShowProfile(false)}
+          />
+        )}
       </div>
     );
   }

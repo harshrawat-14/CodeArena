@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Header = ({ user, onLogout }) => {
+const Header = ({ user, onLogout, onShowProfile }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const getRatingColor = (rating) => {
@@ -115,7 +115,13 @@ const Header = ({ user, onLogout }) => {
                       </div>
                     </div>
                     
-                    <a href="#" className="group flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300">
+                    <button 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        if (onShowProfile) onShowProfile();
+                      }}
+                      className="group flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 w-full text-left"
+                    >
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
                         <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -125,7 +131,7 @@ const Header = ({ user, onLogout }) => {
                         <div className="font-medium">Profile</div>
                         <div className="text-xs text-gray-500">Manage your account</div>
                       </div>
-                    </a>
+                    </button>
                     
                     <a href="#" className="group flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-pink-50/50 transition-all duration-300">
                       <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-purple-200 transition-colors">
