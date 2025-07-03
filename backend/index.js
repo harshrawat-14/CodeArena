@@ -5,6 +5,21 @@ const {generateInputFile} = require("./generateInputFile.js") ;
 const {aiCodeReview} = require("./aiCodeReview.js") ;
 const dotenv = require('dotenv');
 const cors = require('cors');
+const axios = require('axios');
+
+// Import Codeforces utility functions (NEW PRODUCTION API)
+const {
+    getContestsByDivision,
+    getContestProblems,
+    getCompleteProblemData,
+    searchProblems,
+    getTrendingProblems,
+    getProblemsByDifficulty,
+    getRandomProblem,
+    getSystemHealth,
+    logAndFormatError,
+    scrapingCircuitBreaker
+} = require('./codeforcesUtils.js');
 
 // Import Firebase authentication functions
 const {
@@ -55,7 +70,7 @@ app.post("/run" , async (req,res) =>{
         const token = req.headers.authorization?.split(' ')[1];
         if (token) {
             try {
-                const { auth } = require('./firebaseConfig');
+                const { auth } = require('./firebaseConfigAdmin');
                 const decodedToken = await auth.verifyIdToken(token);
                 const uid = decodedToken.uid;
                 
@@ -142,8 +157,306 @@ app.post("/ai-review" , async(req,res)=>{
     }
 })
 
-// Online compiler .........
+// ============ CODEFORCES API ROUTES (PRODUCTION) ============
 
-app.listen(PORT , () =>{
-    console.log("Server is running on port 8000") ; 
+// Get contests by division - Lightning fast Firebase response
+app.get('/api/contests/:division', async (req, res) => {
+    const { division } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+
+    console.log(`🏆 Fetching Div.${division} contests (limit: ${limit})`);
+
+    try {
+        const contests = await getContestsByDivision(division, limit);
+        res.json({
+            success: true,
+            division,
+            contests,
+            count: contests.length,
+            fetchedAt: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Error fetching contests:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch contests',
+            message: error.message
+        });
+    }
+});
+
+// Get contest problems - Instant Firebase response
+app.get('/api/contest/:contestId/problems', async (req, res) => {
+    const { contestId } = req.params;
+    
+    console.log(`🎯 Fetching problems for contest ${contestId}`);
+    
+    try {
+        const problems = await getContestProblems(contestId);
+        
+        res.json({
+            success: true,
+            contestId,
+            problems,
+            count: problems.length,
+            fetchedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error(`❌ Error fetching problems for contest ${contestId}:`, error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch contest problems',
+            message: error.message,
+            contestId
+        });
+    }
+});
+
+// Get complete problem data with test cases - Premium feature
+app.get('/api/contest/:contestId/problem/:index', async (req, res) => {
+    const { contestId, index } = req.params;
+
+    console.log(`🔍 Fetching complete data for problem ${contestId}/${index}`);
+
+    try {
+        const problemData = await getCompleteProblemData(contestId, index);
+        
+        res.json({
+            success: true,
+            problem: problemData,
+            fetchedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error(`❌ Error fetching problem ${contestId}/${index}:`, error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch problem data',
+            message: error.message,
+            problemId: `${contestId}/${index}`
+        });
+    }
+});
+
+// Advanced search - Premium feature
+app.get('/api/search/problems', async (req, res) => {
+    const { 
+        q: query, 
+        minRating, 
+        maxRating, 
+        tags,
+        limit = 20 
+    } = req.query;
+
+    console.log(`🔍 Searching problems: "${query}"`);
+
+    try {
+        const filters = {};
+        if (minRating) filters.minRating = parseInt(minRating);
+        if (maxRating) filters.maxRating = parseInt(maxRating);
+        if (tags) filters.tags = tags.split(',');
+
+        const problems = await searchProblems(query, filters);
+        
+        res.json({
+            success: true,
+            query,
+            filters,
+            problems: problems.slice(0, limit),
+            totalFound: problems.length,
+            searchedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Search error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Search failed',
+            message: error.message
+        });
+    }
+});
+
+// Trending problems - Premium feature
+app.get('/api/problems/trending', async (req, res) => {
+    const limit = parseInt(req.query.limit) || 20;
+
+    console.log(`🔥 Fetching trending problems (limit: ${limit})`);
+
+    try {
+        const problems = await getTrendingProblems(limit);
+        
+        res.json({
+            success: true,
+            problems,
+            count: problems.length,
+            fetchedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Error fetching trending problems:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch trending problems',
+            message: error.message
+        });
+    }
+});
+
+// Problems by difficulty - Premium feature
+app.get('/api/problems/difficulty/:minRating/:maxRating', async (req, res) => {
+    const { minRating, maxRating } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+
+    console.log(`📈 Fetching problems with rating ${minRating}-${maxRating}`);
+
+    try {
+        const problems = await getProblemsByDifficulty(
+            parseInt(minRating), 
+            parseInt(maxRating), 
+            limit
+        );
+        
+        res.json({
+            success: true,
+            difficultyRange: `${minRating}-${maxRating}`,
+            problems,
+            count: problems.length,
+            fetchedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Error fetching problems by difficulty:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch problems by difficulty',
+            message: error.message
+        });
+    }
+});
+
+// Random problem for practice - Premium feature
+app.get('/api/problems/random', async (req, res) => {
+    const rating = req.query.rating ? parseInt(req.query.rating) : null;
+
+    console.log(`🎲 Fetching random problem${rating ? ` (~${rating} rating)` : ''}`);
+
+    try {
+        const problem = await getRandomProblem(rating);
+        
+        res.json({
+            success: true,
+            problem,
+            targetRating: rating,
+            fetchedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Error fetching random problem:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch random problem',
+            message: error.message
+        });
+    }
+});
+
+// System health check
+app.get('/api/health', (req, res) => {
+    try {
+        const health = getSystemHealth();
+        
+        res.json({
+            success: true,
+            health,
+            uptime: process.uptime(),
+            version: '2.0.0'
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Health check failed',
+            message: error.message
+        });
+    }
+});
+
+// Legacy compatibility and diagnostics
+app.get('/api/contest/:contestId/test', async (req, res) => {
+    const { contestId } = req.params;
+    
+    try {
+        console.log(`🧪 Testing contest ${contestId}...`);
+        const problems = await getContestProblems(contestId);
+        
+        res.json({
+            success: true,
+            contestId,
+            problemCount: problems.length,
+            availableProblems: problems.map(p => ({ 
+                index: p.index, 
+                name: p.name,
+                rating: p.rating 
+            })),
+            message: `Contest ${contestId} exists with ${problems.length} problems`
+        });
+        
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            error: 'Contest not found or inaccessible',
+            message: error.message,
+            contestId
+        });
+    }
+});
+
+// System diagnostics
+app.get('/api/diagnostics', (req, res) => {
+    const health = getSystemHealth();
+    
+    res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        system: health,
+        endpoints: {
+            contests: '/api/contests/:division',
+            problems: '/api/contest/:contestId/problems',
+            problem: '/api/contest/:contestId/problem/:index',
+            search: '/api/search/problems',
+            trending: '/api/problems/trending',
+            difficulty: '/api/problems/difficulty/:min/:max',
+            random: '/api/problems/random'
+        },
+        version: '2.0.0-production'
+    });
+});
+
+// Reset circuit breaker (admin endpoint)
+app.post('/api/admin/reset-circuit-breaker', (req, res) => {
+    try {
+        scrapingCircuitBreaker.onSuccess(); // Reset the circuit breaker
+        
+        res.json({ 
+            success: true,
+            message: 'Circuit breaker reset successfully',
+            status: scrapingCircuitBreaker.getStatus()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reset circuit breaker',
+            message: error.message
+        });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Production Server is running on port ${PORT}`);
+    console.log(`🔥 Premium Codeforces API v2.0 - Ready!`);
+    console.log(`⚡ Lightning-fast Firebase-backed responses`);
+    console.log(`🛡️ Advanced Puppeteer scraping with Cloudflare bypass`);
+    console.log(`🎯 Endpoints: /api/health for system status`);
 });

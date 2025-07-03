@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node productionStartup.js && node index.js",
+    "dev": "nodemon index.js",
+    "build": "node productionBuild.js",
+    "build-quick": "node buildProcessor.js",
+    "scrape": "node ultimateScraper.js",
+    "startup": "node productionStartup.js",
+    "health": "node -e \"require('./codeforcesUtils').getSystemHealth().then(console.log)\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,11 +18,18 @@
   "description": "",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "axios": "^1.10.0",
+    "cheerio": "^1.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.18.2",
     "firebase": "^11.10.0",
     "firebase-admin": "^12.0.0",
+    "puppeteer": "^24.11.2",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "user-agents": "^1.1.589",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

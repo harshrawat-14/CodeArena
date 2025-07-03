@@ -30,4 +30,4 @@ if (typeof window !== 'undefined') {
   analytics = getAnalytics(app);
 }
 export { analytics };
-export default app;
+// export default app;

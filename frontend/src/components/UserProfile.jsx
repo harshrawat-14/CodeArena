@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import firestoreService from '../services/firestoreService';
+// import firestoreService from '../services/firestoreService';
 
 const UserProfile = ({ user, onClose }) => {
   const [profile, setProfile] = useState(null);
@@ -7,30 +7,30 @@ const UserProfile = ({ user, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        setLoading(true);
+  // useEffect(() => {
+  //   const loadUserData = async () => {
+  //     try {
+  //       setLoading(true);
         
-        // Load user profile and submissions
-        const [userProfile, userSubmissions] = await Promise.all([
-          firestoreService.getUserProfile(user.id),
-          firestoreService.getUserSubmissions(user.id)
-        ]);
+  //       // Load user profile and submissions
+  //       const [userProfile, userSubmissions] = await Promise.all([
+  //         firestoreService.getUserProfile(user.id),
+  //         firestoreService.getUserSubmissions(user.id)
+  //       ]);
         
-        setProfile(userProfile);
-        setSubmissions(userSubmissions);
-      } catch (error) {
-        console.error('Error loading user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       setProfile(userProfile);
+  //       setSubmissions(userSubmissions);
+  //     } catch (error) {
+  //       console.error('Error loading user data:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    if (user) {
-      loadUserData();
-    }
-  }, [user]);
+  //   if (user) {
+  //     loadUserData();
+  //   }
+  // }, [user]);
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
