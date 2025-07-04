@@ -10,18 +10,18 @@ const scrapeProblem = require('./scrapeProblem.js');
 // const { getContestByDiv } = require('./getContestByDiv.js');
 
 // Import Codeforces utility functions (NEW PRODUCTION API)
-const {
-    getContestsByDivision,
-    getContestProblems,
-    getCompleteProblemData,
-    searchProblems,
-    getTrendingProblems,
-    getProblemsByDifficulty,
-    getRandomProblem,
-    getSystemHealth,
-    logAndFormatError,
-    scrapingCircuitBreaker
-} = require('./codeforcesUtils.js');
+// const {
+//     getContestsByDivision,
+//     getContestProblems,
+//     getCompleteProblemData,
+//     searchProblems,
+//     getTrendingProblems,
+//     getProblemsByDifficulty,
+//     getRandomProblem,
+//     getSystemHealth,
+//     logAndFormatError,
+//     scrapingCircuitBreaker
+// } = require('./codeforcesUtils.js');
 
 // Import Firebase authentication functions
 const {
@@ -494,31 +494,57 @@ app.post('/api/test' , async (req, res) => {
 
 const { db } = require('./firebaseConfigAdmin');
 
-app.get('/api/problem', async (req, res) => {
-    const { div, contestId, index } = req.query;
+// app.get('/api/problem', async (req, res) => {
+//     const { div, contestId, index } = req.query;
 
-    if (!div || !contestId || !index) {
-        return res.status(400).json({ error: "Missing required query parameters." });
+//     if (!div || !contestId || !index) {
+//         return res.status(400).json({ error: "Missing required query parameters." });
+//     }
+
+//     try {
+//         const docRef = db
+//             .collection('contests')
+//             .doc(`div-${div}`)
+//             .collection(`contest_${contestId}`)
+//             .doc(`problem_${index}`);
+
+//         const doc = await docRef.get();
+
+//         if (!doc.exists) {
+//             return res.status(404).json({ error: "Problem not found" });
+//         }
+
+//         res.json(doc.data());
+//     } catch (err) {
+//         res.status(500).json({ error: "Failed to fetch problem", details: err.toString() });
+//     }
+// });
+
+app.get('/api/contest/:contestId/problem/:index', async (req, res) => {
+  const { contestId, index } = req.params;
+
+  try {
+    const divDocs = await db.collection('contests').listDocuments();
+
+    for (const divDoc of divDocs) {
+      const divId = divDoc.id;
+
+      const docRef = db
+        .collection('contests')
+        .doc(divId)
+        .collection(`contest_${contestId}`)
+        .doc(`problem_${index}`);
+
+      const doc = await docRef.get();
+      if (doc.exists) return res.json(doc.data());
     }
 
-    try {
-        const docRef = db
-            .collection('contests')
-            .doc(`div-${div}`)
-            .collection(`contest_${contestId}`)
-            .doc(`problem_${index}`);
-
-        const doc = await docRef.get();
-
-        if (!doc.exists) {
-            return res.status(404).json({ error: "Problem not found" });
-        }
-
-        res.json(doc.data());
-    } catch (err) {
-        res.status(500).json({ error: "Failed to fetch problem", details: err.toString() });
-    }
+    return res.status(404).json({ message: 'Problem not found' });
+  } catch (err) {
+    res.status(500).json({ message: 'Internal Server Error', details: err.toString() });
+  }
 });
+
 
 
 app.listen(PORT, () => {

@@ -540,7 +540,7 @@ const ContestProblemsPage = ({ user, onLogout }) => {
                     Start Solving
                   </button>
                   <button
-                    onClick={() => navigate(`/problem/${problem.contestId || contest.id}/${problem.index}`)}
+                    onClick={() => navigate(`/problem/${problem.contestId}/${problem.index}`)}
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-300 text-sm font-medium"
                     title="View full problem statement"
                   >

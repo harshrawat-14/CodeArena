@@ -139,28 +139,20 @@ const ProblemDetailPage = ({ user, onLogout }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchProblemData = async () => {
+    const fetchProblem = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`http://localhost:8000/api/contest/${contestId}/problem/${index}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch problem: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const res = await fetch(`http://localhost:8000/api/contest/${contestId}/problem/${index}`);
+        if (!res.ok) throw new Error('Problem not found');
+        const data = await res.json();
         setProblemData(data);
       } catch (err) {
-        console.error('Error fetching problem data:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    if (contestId && index) {
-      fetchProblemData();
-    }
+    fetchProblem();
   }, [contestId, index]);
 
   // Inject custom styles for problem statement
@@ -188,33 +180,12 @@ const ProblemDetailPage = ({ user, onLogout }) => {
     navigate(-1);
   };
 
-  const getDifficultyColor = (rating) => {
-    if (!rating) return 'bg-gray-500';
-    if (rating <= 1000) return 'bg-green-500';
-    if (rating <= 1400) return 'bg-blue-500';
-    if (rating <= 1800) return 'bg-purple-500';
-    if (rating <= 2200) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
-
-  const getDifficultyText = (rating) => {
-    if (!rating) return 'Unrated';
-    if (rating <= 1000) return 'Easy';
-    if (rating <= 1400) return 'Medium';
-    if (rating <= 1800) return 'Hard';
-    if (rating <= 2200) return 'Very Hard';
-    return 'Expert';
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <Header user={user} onLogout={onLogout} />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-            <p className="text-slate-300">Loading problem...</p>
-          </div>
+          <p className="text-center text-slate-300">Loading...</p>
         </div>
       </div>
     );
@@ -224,40 +195,8 @@ const ProblemDetailPage = ({ user, onLogout }) => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <Header user={user} onLogout={onLogout} />
-        <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4">
-          <div className="bg-slate-800 rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-            <div className="text-center">
-              <div className="text-red-400 text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-2">Error Loading Problem</h2>
-              <p className="text-slate-300 mb-6">{error}</p>
-              <button
-                onClick={handleGoBack}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Go Back
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!problemData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <Header user={user} onLogout={onLogout} />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-100 mb-2">Problem Not Found</h2>
-            <p className="text-slate-300 mb-6">The requested problem could not be found.</p>
-            <button
-              onClick={handleGoBack}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
+          <p className="text-center text-red-400">{error}</p>
         </div>
       </div>
     );
@@ -268,150 +207,67 @@ const ProblemDetailPage = ({ user, onLogout }) => {
       <Header user={user} onLogout={onLogout} />
       
       {/* Problem Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white">
         {/* Navigation Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleGoBack}
-                className="flex items-center space-x-2 text-slate-300 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                <span>Back</span>
-              </button>
-              <div className="h-6 w-px bg-slate-600"></div>
-              <h1 className="text-xl font-semibold text-slate-100">
-                Problem {index.toUpperCase()} - Contest {contestId}
-              </h1>
-            </div>
-          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center space-x-2 text-slate-300 hover:text-white transition-colors mb-4"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span>Back</span>
+          </button>
+          
+          <h1 className="text-2xl font-bold mb-2">{problemData.title}</h1>
+          <p className="mb-2 text-sm text-gray-400">
+            {problemData.contestName} ({problemData.contestId}{problemData.problemIndex})
+          </p>
         </div>
 
-        {/* Problem Card */}
-        <div className="bg-slate-800 rounded-lg shadow-lg overflow-hidden">
-          {/* Problem Header */}
-          <div className="bg-slate-700 px-6 py-4 border-b border-slate-600">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                  {problemData.index}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-100">{problemData.name}</h2>
-                  <div className="flex items-center space-x-3 mt-1">
-                    {problemData.rating && (
-                      <>
-                        <span className={`px-3 py-1 text-xs rounded-full text-white font-medium ${getDifficultyColor(problemData.rating)}`}>
-                          {getDifficultyText(problemData.rating)}
-                        </span>
-                        <span className="text-sm text-slate-400">{problemData.rating}</span>
-                      </>
-                    )}
-                    <div className="flex items-center space-x-1 text-slate-400">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-sm">
-                        {problemData.timeLimit || '2 seconds'}
-                      </span>
-                    </div>
-                    <span className="text-sm text-slate-400">
-                      {problemData.memoryLimit || '256 MB'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-slate-400">
-                Contest {contestId}
-              </div>
-            </div>
-          </div>
-
-          {/* Problem Content */}
-          <div className="px-6 py-8">
-            <div className="space-y-6">
-              {/* Problem Info */}
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-slate-200 mb-3">Problem Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-slate-400">Problem ID:</span>
-                    <span className="ml-2 text-slate-200">{problemData.contestId}{problemData.index}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Type:</span>
-                    <span className="ml-2 text-slate-200">{problemData.type || 'PROGRAMMING'}</span>
-                  </div>
-                  {problemData.points && (
-                    <div>
-                      <span className="text-slate-400">Points:</span>
-                      <span className="ml-2 text-slate-200">{problemData.points}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Tags */}
-              {problemData.tags && problemData.tags.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-200 mb-3">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {problemData.tags.map((tag, index) => (
-                      <span 
-                        key={index}
-                        className="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Problem Statement */}
-              {problemData.html ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-200 mb-4">Problem Statement</h3>
-                  <div className="bg-slate-700/30 rounded-lg p-6">
-                    <div 
-                      className="problem-statement prose prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: problemData.html }}
-                    />
-                  </div>
-                </div>
-              ) : problemData.message ? (
-                <div className="bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded-r-lg">
-                  <div className="flex items-center">
-                    <div className="text-amber-400 mr-3">💡</div>
-                    <div>
-                      <p className="text-amber-100 font-medium">Problem Statement Unavailable</p>
-                      <p className="text-amber-200 text-sm">
-                        {problemData.message || 'Unable to load the full problem statement. Please view it on Codeforces.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded-r-lg">
-                  <div className="flex items-center">
-                    <div className="text-amber-400 mr-3">💡</div>
-                    <div>
-                      <p className="text-amber-100 font-medium">View Full Problem Statement</p>
-                      <p className="text-amber-200 text-sm">
-                        To see the complete problem statement with examples and constraints, 
-                        click "View on Codeforces" below.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Problem Statement */}
+        <div className="bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+          <div 
+            dangerouslySetInnerHTML={{ __html: problemData.statement }} 
+            className="prose prose-invert max-w-none problem-statement" 
+          />
         </div>
+        
+        {/* Input Specification */}
+        {problemData.inputSpec && (
+          <div className="bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Input</h2>
+            <div dangerouslySetInnerHTML={{ __html: problemData.inputSpec }} />
+          </div>
+        )}
+
+        {/* Output Specification */}
+        {problemData.outputSpec && (
+          <div className="bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Output</h2>
+            <div dangerouslySetInnerHTML={{ __html: problemData.outputSpec }} />
+          </div>
+        )}
+
+        {/* Examples */}
+        {problemData.examples && (
+          <div className="bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Examples</h2>
+            <div dangerouslySetInnerHTML={{ __html: problemData.examples }} />
+          </div>
+        )}
+
+        {/* Note */}
+        {problemData.note && (
+          <div className="bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Note</h2>
+            <div dangerouslySetInnerHTML={{ __html: problemData.note }} />
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <a
-            href={problemData.problemUrl}
+            href={`https://codeforces.com/problemset/problem/${contestId}/${index}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -421,20 +277,12 @@ const ProblemDetailPage = ({ user, onLogout }) => {
           </a>
           
           <Link
-            to={`/ide?contestId=${contestId}&problemIndex=${index}&problemName=${encodeURIComponent(problemData.name)}`}
+            to={`/ide?contestId=${contestId}&problemIndex=${index}&problemName=${encodeURIComponent(problemData.title || problemData.name)}`}
             className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
           >
             <Code className="h-5 w-5" />
             <span>Solve in IDE</span>
           </Link>
-          
-          <button
-            onClick={handleGoBack}
-            className="flex items-center space-x-2 bg-slate-600 text-white px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Go Back</span>
-          </button>
         </div>
       </div>
     </div>

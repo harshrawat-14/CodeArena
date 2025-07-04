@@ -191,7 +191,7 @@ const CustomContestPage = ({ user, onLogout }) => {
 
   const resetSelection = () => {
     setSelectedAction(null);
-    setSelectedDivision('');
+    setSelectedDivision('');<Link to={`/problem/${contestId}/${index}`}>View Full Problem</Link>
     setRoomCode('');
     setContestTitle('');
   };
