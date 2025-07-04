@@ -467,14 +467,17 @@ app.get('/api/contestInfo', async (req, res) => {
     }
 });
 
+const getProblemByDivID = require('./getProblemByDivID.js');
+
 app.get('/api/problemIndices', async (req, res) => {
-    const div = req.query.div || "Div. 2";  // Allow ?div=Div. 1, etc.
+    const div = req.query.div || "Div. 2";
+    const limit = parseInt(req.query.limit || "5");
 
     try {
-        const data = await getContestByDiv(div);
+        const data = await getProblemByDivID(div, limit);
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "Failed to fetch contest info", details: err.toString() });
+        res.status(500).json({ error: "Failed to get problem indexes", details: err.toString() });
     }
 });
 
