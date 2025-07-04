@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const axios = require('axios');
 const scrapeProblem = require('./scrapeProblem.js');
+// const { getContestByDiv } = require('./getContestByDiv.js');
 
 // Import Codeforces utility functions (NEW PRODUCTION API)
 const {
@@ -33,6 +34,7 @@ const {
     updateUserStats,
     getLeaderboard
 } = require('./loginLogic.js');
+const getContestByDiv = require("./getContestByDiv.js");
 
 const app = express() ; 
 
@@ -240,128 +242,128 @@ app.get('/api/contest/:contestId/problem/:index', async (req, res) => {
     }
 });
 
-// Advanced search - Premium feature
-app.get('/api/search/problems', async (req, res) => {
-    const { 
-        q: query, 
-        minRating, 
-        maxRating, 
-        tags,
-        limit = 20 
-    } = req.query;
+// // Advanced search - Premium feature
+// app.get('/api/search/problems', async (req, res) => {
+//     const { 
+//         q: query, 
+//         minRating, 
+//         maxRating, 
+//         tags,
+//         limit = 20 
+//     } = req.query;
 
-    console.log(`🔍 Searching problems: "${query}"`);
+//     console.log(`🔍 Searching problems: "${query}"`);
 
-    try {
-        const filters = {};
-        if (minRating) filters.minRating = parseInt(minRating);
-        if (maxRating) filters.maxRating = parseInt(maxRating);
-        if (tags) filters.tags = tags.split(',');
+//     try {
+//         const filters = {};
+//         if (minRating) filters.minRating = parseInt(minRating);
+//         if (maxRating) filters.maxRating = parseInt(maxRating);
+//         if (tags) filters.tags = tags.split(',');
 
-        const problems = await searchProblems(query, filters);
+//         const problems = await searchProblems(query, filters);
         
-        res.json({
-            success: true,
-            query,
-            filters,
-            problems: problems.slice(0, limit),
-            totalFound: problems.length,
-            searchedAt: new Date().toISOString()
-        });
+//         res.json({
+//             success: true,
+//             query,
+//             filters,
+//             problems: problems.slice(0, limit),
+//             totalFound: problems.length,
+//             searchedAt: new Date().toISOString()
+//         });
         
-    } catch (error) {
-        console.error('❌ Search error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Search failed',
-            message: error.message
-        });
-    }
-});
+//     } catch (error) {
+//         console.error('❌ Search error:', error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Search failed',
+//             message: error.message
+//         });
+//     }
+// });
 
-// Trending problems - Premium feature
-app.get('/api/problems/trending', async (req, res) => {
-    const limit = parseInt(req.query.limit) || 20;
+// // Trending problems - Premium feature
+// app.get('/api/problems/trending', async (req, res) => {
+//     const limit = parseInt(req.query.limit) || 20;
 
-    console.log(`🔥 Fetching trending problems (limit: ${limit})`);
+//     console.log(`🔥 Fetching trending problems (limit: ${limit})`);
 
-    try {
-        const problems = await getTrendingProblems(limit);
+//     try {
+//         const problems = await getTrendingProblems(limit);
         
-        res.json({
-            success: true,
-            problems,
-            count: problems.length,
-            fetchedAt: new Date().toISOString()
-        });
+//         res.json({
+//             success: true,
+//             problems,
+//             count: problems.length,
+//             fetchedAt: new Date().toISOString()
+//         });
         
-    } catch (error) {
-        console.error('❌ Error fetching trending problems:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch trending problems',
-            message: error.message
-        });
-    }
-});
+//     } catch (error) {
+//         console.error('❌ Error fetching trending problems:', error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Failed to fetch trending problems',
+//             message: error.message
+//         });
+//     }
+// });
 
-// Problems by difficulty - Premium feature
-app.get('/api/problems/difficulty/:minRating/:maxRating', async (req, res) => {
-    const { minRating, maxRating } = req.params;
-    const limit = parseInt(req.query.limit) || 20;
+// // Problems by difficulty - Premium feature
+// app.get('/api/problems/difficulty/:minRating/:maxRating', async (req, res) => {
+//     const { minRating, maxRating } = req.params;
+//     const limit = parseInt(req.query.limit) || 20;
 
-    console.log(`📈 Fetching problems with rating ${minRating}-${maxRating}`);
+//     console.log(`📈 Fetching problems with rating ${minRating}-${maxRating}`);
 
-    try {
-        const problems = await getProblemsByDifficulty(
-            parseInt(minRating), 
-            parseInt(maxRating), 
-            limit
-        );
+//     try {
+//         const problems = await getProblemsByDifficulty(
+//             parseInt(minRating), 
+//             parseInt(maxRating), 
+//             limit
+//         );
         
-        res.json({
-            success: true,
-            difficultyRange: `${minRating}-${maxRating}`,
-            problems,
-            count: problems.length,
-            fetchedAt: new Date().toISOString()
-        });
+//         res.json({
+//             success: true,
+//             difficultyRange: `${minRating}-${maxRating}`,
+//             problems,
+//             count: problems.length,
+//             fetchedAt: new Date().toISOString()
+//         });
         
-    } catch (error) {
-        console.error('❌ Error fetching problems by difficulty:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch problems by difficulty',
-            message: error.message
-        });
-    }
-});
+//     } catch (error) {
+//         console.error('❌ Error fetching problems by difficulty:', error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Failed to fetch problems by difficulty',
+//             message: error.message
+//         });
+//     }
+// });
 
-// Random problem for practice - Premium feature
-app.get('/api/problems/random', async (req, res) => {
-    const rating = req.query.rating ? parseInt(req.query.rating) : null;
+// // Random problem for practice - Premium feature
+// app.get('/api/problems/random', async (req, res) => {
+//     const rating = req.query.rating ? parseInt(req.query.rating) : null;
 
-    console.log(`🎲 Fetching random problem${rating ? ` (~${rating} rating)` : ''}`);
+//     console.log(`🎲 Fetching random problem${rating ? ` (~${rating} rating)` : ''}`);
 
-    try {
-        const problem = await getRandomProblem(rating);
+//     try {
+//         const problem = await getRandomProblem(rating);
         
-        res.json({
-            success: true,
-            problem,
-            targetRating: rating,
-            fetchedAt: new Date().toISOString()
-        });
+//         res.json({
+//             success: true,
+//             problem,
+//             targetRating: rating,
+//             fetchedAt: new Date().toISOString()
+//         });
         
-    } catch (error) {
-        console.error('❌ Error fetching random problem:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch random problem',
-            message: error.message
-        });
-    }
-});
+//     } catch (error) {
+//         console.error('❌ Error fetching random problem:', error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Failed to fetch random problem',
+//             message: error.message
+//         });
+//     }
+// });
 
 // System health check
 app.get('/api/health', (req, res) => {
@@ -451,6 +453,28 @@ app.post('/api/admin/reset-circuit-breaker', (req, res) => {
             error: 'Failed to reset circuit breaker',
             message: error.message
         });
+    }
+});
+
+app.get('/api/contestInfo', async (req, res) => {
+    const div = req.query.div || "Div. 2";  // Allow ?div=Div. 1, etc.
+
+    try {
+        const data = await getContestByDiv(div);
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch contest info", details: err.toString() });
+    }
+});
+
+app.get('/api/problemIndices', async (req, res) => {
+    const div = req.query.div || "Div. 2";  // Allow ?div=Div. 1, etc.
+
+    try {
+        const data = await getContestByDiv(div);
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch contest info", details: err.toString() });
     }
 });
 
