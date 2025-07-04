@@ -163,84 +163,84 @@ app.post("/ai-review" , async(req,res)=>{
 // ============ CODEFORCES API ROUTES (PRODUCTION) ============
 
 // Get contests by division - Lightning fast Firebase response
-app.get('/api/contests/:division', async (req, res) => {
-    const { division } = req.params;
-    const limit = parseInt(req.query.limit) || 20;
+// app.get('/api/contests/:division', async (req, res) => {
+//     const { division } = req.params;
+//     const limit = parseInt(req.query.limit) || 20;
 
-    console.log(`🏆 Fetching Div.${division} contests (limit: ${limit})`);
+//     console.log(`🏆 Fetching Div.${division} contests (limit: ${limit})`);
 
-    try {
-        const contests = await getContestsByDivision(division, limit);
-        res.json({
-            success: true,
-            division,
-            contests,
-            count: contests.length,
-            fetchedAt: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error('❌ Error fetching contests:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to fetch contests',
-            message: error.message
-        });
-    }
-});
+//     try {
+//         const contests = await getContestsByDivision(division, limit);
+//         res.json({
+//             success: true,
+//             division,
+//             contests,
+//             count: contests.length,
+//             fetchedAt: new Date().toISOString()
+//         });
+//     } catch (error) {
+//         console.error('❌ Error fetching contests:', error);
+//         res.status(500).json({ 
+//             success: false,
+//             error: 'Failed to fetch contests',
+//             message: error.message
+//         });
+//     }
+// });
 
 // Get contest problems - Instant Firebase response
-app.get('/api/contest/:contestId/problems', async (req, res) => {
-    const { contestId } = req.params;
+// app.get('/api/contest/:contestId/problems', async (req, res) => {
+//     const { contestId } = req.params;
     
-    console.log(`🎯 Fetching problems for contest ${contestId}`);
+//     console.log(`🎯 Fetching problems for contest ${contestId}`);
     
-    try {
-        const problems = await getContestProblems(contestId);
+//     try {
+//         const problems = await getContestProblems(contestId);
         
-        res.json({
-            success: true,
-            contestId,
-            problems,
-            count: problems.length,
-            fetchedAt: new Date().toISOString()
-        });
+//         res.json({
+//             success: true,
+//             contestId,
+//             problems,
+//             count: problems.length,
+//             fetchedAt: new Date().toISOString()
+//         });
         
-    } catch (error) {
-        console.error(`❌ Error fetching problems for contest ${contestId}:`, error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch contest problems',
-            message: error.message,
-            contestId
-        });
-    }
-});
+//     } catch (error) {
+//         console.error(`❌ Error fetching problems for contest ${contestId}:`, error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Failed to fetch contest problems',
+//             message: error.message,
+//             contestId
+//         });
+//     }
+// });
 
 // Get complete problem data with test cases - Premium feature
-app.get('/api/contest/:contestId/problem/:index', async (req, res) => {
-    const { contestId, index } = req.params;
+// app.get('/api/contest/:contestId/problem/:index', async (req, res) => {
+//     const { contestId, index } = req.params;
 
-    console.log(`🔍 Fetching complete data for problem ${contestId}/${index}`);
+//     console.log(`🔍 Fetching complete data for problem ${contestId}/${index}`);
 
-    try {
-        const problemData = await getCompleteProblemData(contestId, index);
+//     try {
+//         const problemData = await getCompleteProblemData(contestId, index);
         
-        res.json({
-            success: true,
-            problem: problemData,
-            fetchedAt: new Date().toISOString()
-        });
+//         res.json({
+//             success: true,
+//             problem: problemData,
+//             fetchedAt: new Date().toISOString()
+//         });
         
-    } catch (error) {
-        console.error(`❌ Error fetching problem ${contestId}/${index}:`, error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch problem data',
-            message: error.message,
-            problemId: `${contestId}/${index}`
-        });
-    }
-});
+//     } catch (error) {
+//         console.error(`❌ Error fetching problem ${contestId}/${index}:`, error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Failed to fetch problem data',
+//             message: error.message,
+//             problemId: `${contestId}/${index}`
+//         });
+//     }
+// });
 
 // // Advanced search - Premium feature
 // app.get('/api/search/problems', async (req, res) => {
@@ -387,55 +387,55 @@ app.get('/api/health', (req, res) => {
 });
 
 // Legacy compatibility and diagnostics
-app.get('/api/contest/:contestId/test', async (req, res) => {
-    const { contestId } = req.params;
+// app.get('/api/contest/:contestId/test', async (req, res) => {
+//     const { contestId } = req.params;
     
-    try {
-        console.log(`🧪 Testing contest ${contestId}...`);
-        const problems = await getContestProblems(contestId);
+//     try {
+//         console.log(`🧪 Testing contest ${contestId}...`);
+//         const problems = await getContestProblems(contestId);
         
-        res.json({
-            success: true,
-            contestId,
-            problemCount: problems.length,
-            availableProblems: problems.map(p => ({ 
-                index: p.index, 
-                name: p.name,
-                rating: p.rating 
-            })),
-            message: `Contest ${contestId} exists with ${problems.length} problems`
-        });
+//         res.json({
+//             success: true,
+//             contestId,
+//             problemCount: problems.length,
+//             availableProblems: problems.map(p => ({ 
+//                 index: p.index, 
+//                 name: p.name,
+//                 rating: p.rating 
+//             })),
+//             message: `Contest ${contestId} exists with ${problems.length} problems`
+//         });
         
-    } catch (error) {
-        res.status(404).json({
-            success: false,
-            error: 'Contest not found or inaccessible',
-            message: error.message,
-            contestId
-        });
-    }
-});
+//     } catch (error) {
+//         res.status(404).json({
+//             success: false,
+//             error: 'Contest not found or inaccessible',
+//             message: error.message,
+//             contestId
+//         });
+//     }
+// });
 
 // System diagnostics
-app.get('/api/diagnostics', (req, res) => {
-    const health = getSystemHealth();
+// app.get('/api/diagnostics', (req, res) => {
+//     const health = getSystemHealth();
     
-    res.json({
-        success: true,
-        timestamp: new Date().toISOString(),
-        system: health,
-        endpoints: {
-            contests: '/api/contests/:division',
-            problems: '/api/contest/:contestId/problems',
-            problem: '/api/contest/:contestId/problem/:index',
-            search: '/api/search/problems',
-            trending: '/api/problems/trending',
-            difficulty: '/api/problems/difficulty/:min/:max',
-            random: '/api/problems/random'
-        },
-        version: '2.0.0-production'
-    });
-});
+//     res.json({
+//         success: true,
+//         timestamp: new Date().toISOString(),
+//         system: health,
+//         endpoints: {
+//             contests: '/api/contests/:division',
+//             problems: '/api/contest/:contestId/problems',
+//             problem: '/api/contest/:contestId/problem/:index',
+//             search: '/api/search/problems',
+//             trending: '/api/problems/trending',
+//             difficulty: '/api/problems/difficulty/:min/:max',
+//             random: '/api/problems/random'
+//         },
+//         version: '2.0.0-production'
+//     });
+// });
 
 // Reset circuit breaker (admin endpoint)
 app.post('/api/admin/reset-circuit-breaker', (req, res) => {
@@ -491,6 +491,35 @@ app.post('/api/test' , async (req, res) => {
         res.status(500).json({ error: "Failed to scrape problem", details: err.toString() });
     }
 });
+
+const { db } = require('./firebaseConfigAdmin');
+
+app.get('/api/problem', async (req, res) => {
+    const { div, contestId, index } = req.query;
+
+    if (!div || !contestId || !index) {
+        return res.status(400).json({ error: "Missing required query parameters." });
+    }
+
+    try {
+        const docRef = db
+            .collection('contests')
+            .doc(`div-${div}`)
+            .collection(`contest_${contestId}`)
+            .doc(`problem_${index}`);
+
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ error: "Problem not found" });
+        }
+
+        res.json(doc.data());
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch problem", details: err.toString() });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`🚀 Production Server is running on port ${PORT}`);
