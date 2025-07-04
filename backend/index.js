@@ -6,6 +6,7 @@ const {aiCodeReview} = require("./aiCodeReview.js") ;
 const dotenv = require('dotenv');
 const cors = require('cors');
 const axios = require('axios');
+const scrapeProblem = require('./scrapeProblem.js');
 
 // Import Codeforces utility functions (NEW PRODUCTION API)
 const {
@@ -450,6 +451,17 @@ app.post('/api/admin/reset-circuit-breaker', (req, res) => {
             error: 'Failed to reset circuit breaker',
             message: error.message
         });
+    }
+});
+
+app.post('/api/test' , async (req, res) => {
+    console.log('Test endpoint is working!');
+    const { contestId , index } = req.body ;
+    try {
+        const data = await scrapeProblem(contestId, index.toUpperCase());
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to scrape problem", details: err.toString() });
     }
 });
 
