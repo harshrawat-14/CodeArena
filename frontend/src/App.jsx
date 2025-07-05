@@ -8,18 +8,20 @@ import './App.css';
 // Import page components
 import LoadingPage from './pages/LoadingPage';
 import LoginPage from './pages/LoginPage';
-import MainPageNew from './pages/MainPageNew'; // Updated premium main page
+import MainPage from './pages/MainPage'; // Updated premium main page
 import ProfilePage from './pages/ProfilePage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ErrorPage from './pages/ErrorPage';
 import SignUpPage from './pages/SignUp';
 import IDEPage from './pages/IDEPage';
-import CustomContestPageNew from './pages/CustomContestPageNew'; // Updated premium contest page
+import CustomContestPage from './pages/CustomContestPage'; // Updated premium contest page
 import ContestProblemsPage from './pages/liveContestPage';
-import ProblemDetailPageNew from './pages/ProblemDetailPageNew'; // Updated premium problem page
+import ContestIDEPage from './pages/ContestIDEPage'; // New contest IDE page
+import MySubmissionsPage from './pages/MySubmissionsPage'; // New submissions page
+import ProblemDetailPage from './pages/ProblemDetailPage'; // Updated premium problem page
 
 // Import services
-import apiService from './services/apiService';
+// import apiService from './services/apiService';
 
 // Error Boundary Component
 // class ErrorBoundary extends React.Component {
@@ -81,12 +83,12 @@ function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Initialize API service error handler
-  useEffect(() => {
-    apiService.showErrorToast = (message) => {
-      // Toast notifications will be handled by react-hot-toast
-      console.error('API Error:', message);
-    };
-  }, []);
+  // useEffect(() => {
+  //   apiService.showErrorToast = (message) => {
+  //     // Toast notifications will be handled by react-hot-toast
+  //     console.error('API Error:', message);
+  //   };
+  // }, []);
 
   // Set up Firebase auth state listener
   useEffect(() => {
@@ -136,13 +138,14 @@ function App() {
           <Route path='/login' element={<LoginPage/>}  />
           <Route path='/signup' element={<SignUpPage/>} />
           <Route path='/ide' element={<IDEPage user={user} onLogout={handleLogout} />} />
-          <Route path='/customContest' element={<CustomContestPageNew user={user} onLogout={handleLogout} />} />
-          <Route path='/customContest/:contestId' element={<ContestProblemsPage user={user} onLogout={handleLogout} />} />
-          <Route path='/problem/:contestId/:index' element={<ProblemDetailPageNew user={user} onLogout={handleLogout} />} />
+          <Route path='/customContest' element={<CustomContestPage user={user} onLogout={handleLogout} />} />
+          <Route path='/contest/:contestId/ide' element={<ContestIDEPage user={user} onLogout={handleLogout} />} />
+          <Route path='/submissions' element={<MySubmissionsPage user={user} onLogout={handleLogout} />} />
+          <Route path='/problem/:contestId/:index' element={<ProblemDetailPage user={user} onLogout={handleLogout} />} />
           <Route path='/profile' element={<ProfilePage user={user} onLogout={handleLogout} />} />
           <Route path='/profile/:userId' element={<ProfilePage user={user} onLogout={handleLogout} />} />
           <Route path='/leaderboard' element={<LeaderboardPage user={user} onLogout={handleLogout} />} />
-          <Route path='/' element={<MainPageNew user={user} onLogout={handleLogout} />} />
+          <Route path='/' element={<MainPage user={user} onLogout={handleLogout} />} />
         </Routes>
       </BrowserRouter>
       

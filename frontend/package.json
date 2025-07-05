@@ -15,6 +15,7 @@
     "firebase": "^10.8.0",
     "framer-motion": "^12.23.0",
     "lucide-react": "^0.525.0",
+    "monaco-editor": "^0.45.0",
     "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
