@@ -16,6 +16,8 @@ import SignUpPage from './pages/SignUp';
 import IDEPage from './pages/IDEPage';
 import CustomContestPage from './pages/CustomContestPage'; // Updated premium contest page
 import ContestProblemsPage from './pages/liveContestPage';
+import ContestIDEPage from './pages/ContestIDEPage'; // New contest IDE page
+import MySubmissionsPage from './pages/MySubmissionsPage'; // New submissions page
 import ProblemDetailPage from './pages/ProblemDetailPage'; // Updated premium problem page
 
 // Import services
@@ -137,7 +139,8 @@ function App() {
           <Route path='/signup' element={<SignUpPage/>} />
           <Route path='/ide' element={<IDEPage user={user} onLogout={handleLogout} />} />
           <Route path='/customContest' element={<CustomContestPage user={user} onLogout={handleLogout} />} />
-          <Route path='/customContest/:contestId' element={<ContestProblemsPage user={user} onLogout={handleLogout} />} />
+          <Route path='/contest/:contestId/ide' element={<ContestIDEPage user={user} onLogout={handleLogout} />} />
+          <Route path='/submissions' element={<MySubmissionsPage user={user} onLogout={handleLogout} />} />
           <Route path='/problem/:contestId/:index' element={<ProblemDetailPage user={user} onLogout={handleLogout} />} />
           <Route path='/profile' element={<ProfilePage user={user} onLogout={handleLogout} />} />
           <Route path='/profile/:userId' element={<ProfilePage user={user} onLogout={handleLogout} />} />

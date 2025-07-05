@@ -63,6 +63,10 @@ const Header = ({ user, onLogout }) => {
                 <span className="relative z-10">Contests</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 to-pink-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </Link>
+              <Link to="/submissions" className="group relative px-4 py-2 text-gray-700 hover:text-orange-600 font-medium transition-all duration-300 rounded-lg hover:bg-orange-50/50">
+                <span className="relative z-10">Submissions</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </Link>
               <a href="#" className="group relative px-4 py-2 text-gray-700 hover:text-green-600 font-medium transition-all duration-300 rounded-lg hover:bg-green-50/50">
                 <span className="relative z-10">Problems</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 to-green-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

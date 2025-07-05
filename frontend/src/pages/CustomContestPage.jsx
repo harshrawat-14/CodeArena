@@ -140,7 +140,7 @@ const CustomContestPage = ({ user, onLogout }) => {
       storeContestData(roomCode, contestData);
       
       console.log('Contest created successfully:', contestData);
-      console.log('Navigating to:', `/customContest/${contestId}`);
+      console.log('Navigating to:', `/contest/${contestId}/ide`);
       console.log('Room Code:', roomCode);
       
       // Show success message with room code
@@ -149,8 +149,8 @@ const CustomContestPage = ({ user, onLogout }) => {
       // Set loading to false before navigation
       setIsCreating(false);
       
-      // Navigate to the contest problems page
-      navigate(`/customContest/${contestId}`, { replace: true });
+      // Navigate to the contest IDE page
+      navigate(`/contest/${contestId}/ide`, { replace: true });
       
     } catch (error) {
       console.error("Error creating contest:", error);
@@ -185,8 +185,8 @@ const CustomContestPage = ({ user, onLogout }) => {
     console.log('Joining contest:', contestData);
     alert(`Successfully joined contest: ${contestData.title}`);
     
-    // Navigate to the contest problems page
-    navigate(`/customContest/${contestData.contestId}`);
+    // Navigate to the contest IDE page (same as creator)
+    navigate(`/contest/${contestData.contestId}/ide`);
   };
 
   const resetSelection = () => {
