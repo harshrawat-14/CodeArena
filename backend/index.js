@@ -267,6 +267,14 @@ app.post('/api/acceptedSol', async (req, res) => {
   }
 });
 
+// Simple health check endpoint for Docker
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
 
 app.listen(PORT, () => {
     console.log(`🚀 Production Server is running on port ${PORT}`);

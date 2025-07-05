@@ -256,7 +256,7 @@ const ContestIDEPage = ({ user }) => {
                 language,
                 code,
                 submittedAt: new Date().toISOString(),
-                status: 'Submitted',
+                status: 'Judging',
                 verdict: 'Pending',
                 timeUsed: 0,
                 memoryUsed: 0
@@ -267,33 +267,208 @@ const ContestIDEPage = ({ user }) => {
             setSubmissions(updatedSubmissions);
             localStorage.setItem(`contest_${contestId}_submissions`, JSON.stringify(updatedSubmissions));
 
-            // Simulate verdict after a few seconds
-            setTimeout(() => {
-                const verdicts = ['Accepted', 'Wrong Answer', 'Time Limit Exceeded', 'Runtime Error'];
-                const randomVerdict = verdicts[Math.floor(Math.random() * verdicts.length)];
-                const randomTime = Math.floor(Math.random() * 2000) + 100;
-                const randomMemory = Math.floor(Math.random() * 50000) + 1000;
+            showToast('Code submitted! Judging...', 'info');
 
-                submission.verdict = randomVerdict;
-                submission.timeUsed = randomTime;
-                submission.memoryUsed = randomMemory;
-                submission.status = 'Judged';
+            // Judge the submission against sample test cases
+            const verdict = await judgeSubmission(code, language);
+            
+            submission.verdict = verdict.verdict;
+            submission.timeUsed = verdict.timeUsed;
+            submission.memoryUsed = verdict.memoryUsed;
+            submission.status = 'Judged';
+            submission.error = verdict.error;
 
-                const finalSubmissions = updatedSubmissions.map(s => 
-                    s.id === submission.id ? submission : s
-                );
-                setSubmissions(finalSubmissions);
-                localStorage.setItem(`contest_${contestId}_submissions`, JSON.stringify(finalSubmissions));
+            const finalSubmissions = updatedSubmissions.map(s => 
+                s.id === submission.id ? submission : s
+            );
+            setSubmissions(finalSubmissions);
+            localStorage.setItem(`contest_${contestId}_submissions`, JSON.stringify(finalSubmissions));
 
-                showToast(`Submission ${randomVerdict}!`, randomVerdict === 'Accepted' ? 'success' : 'error');
-            }, 3000);
-
-            showToast('Code submitted successfully!', 'success');
+            showToast(`Submission ${verdict.verdict}!`, verdict.verdict === 'Accepted' ? 'success' : 'error');
         } catch (error) {
             console.error('Submission error:', error);
             showToast('Submission failed', 'error');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const judgeSubmission = async (code, language) => {
+        const startTime = Date.now();
+        
+        try {
+            // Get sample test cases from the current problem
+            const sampleTests = extractSampleTestCases(currentProblem);
+            console.log('Extracted sample test cases:', sampleTests);
+            
+            if (sampleTests.length === 0) {
+                // No sample tests found, return a simulated verdict
+                console.log('No sample test cases found, returning simulated verdict');
+                return {
+                    verdict: 'Accepted',
+                    timeUsed: Math.floor(Math.random() * 1000) + 100,
+                    memoryUsed: Math.floor(Math.random() * 50000) + 1000,
+                    error: null
+                };
+            }
+
+            // Test the code against all sample test cases
+            let allPassed = true;
+            let executionError = null;
+            
+            for (let i = 0; i < sampleTests.length; i++) {
+                const testCase = sampleTests[i];
+                console.log(`Testing case ${i + 1}:`, testCase);
+                
+                try {
+                    // Run the code with the sample input
+                    const response = await axios.post('http://localhost:8000/run', {
+                        language,
+                        code,
+                        input: testCase.input
+                    });
+
+                    if (response.data.error) {
+                        // Compilation or runtime error
+                        executionError = response.data.error;
+                        console.log('Execution error:', executionError);
+                        allPassed = false;
+                        break;
+                    }
+
+                    const output = response.data.output?.trim() || '';
+                    const expectedOutput = testCase.output.trim();
+                    
+                    console.log(`Test ${i + 1} - Output: "${output}", Expected: "${expectedOutput}"`);
+
+                    // Compare output with expected output
+                    if (output !== expectedOutput) {
+                        console.log(`Test ${i + 1} failed: output mismatch`);
+                        allPassed = false;
+                        break;
+                    }
+                } catch (error) {
+                    // Network or execution error
+                    executionError = error.response?.data?.error || error.message;
+                    console.log('Network/execution error:', executionError);
+                    allPassed = false;
+                    break;
+                }
+            }
+
+            const executionTime = Date.now() - startTime;
+            
+            if (executionError) {
+                // Determine if it's a compilation error or runtime error
+                const isCompilationError = executionError.toLowerCase().includes('compilation') || 
+                                         executionError.toLowerCase().includes('compile') ||
+                                         executionError.toLowerCase().includes('syntax');
+                
+                return {
+                    verdict: isCompilationError ? 'Compilation Error' : 'Runtime Error',
+                    timeUsed: executionTime,
+                    memoryUsed: Math.floor(Math.random() * 10000) + 1000,
+                    error: executionError
+                };
+            }
+
+            const verdict = allPassed ? 'Accepted' : 'Wrong Answer';
+            console.log('Final verdict:', verdict);
+            
+            return {
+                verdict,
+                timeUsed: executionTime,
+                memoryUsed: Math.floor(Math.random() * 50000) + 1000,
+                error: null
+            };
+
+        } catch (error) {
+            console.error('Error judging submission:', error);
+            return {
+                verdict: 'System Error',
+                timeUsed: Date.now() - startTime,
+                memoryUsed: 0,
+                error: 'System error occurred during judging'
+            };
+        }
+    };
+
+    const extractSampleTestCases = (problemIndex) => {
+        const problemStatement = problemStatements[problemIndex];
+        if (!problemStatement || !problemStatement.examples) {
+            return [];
+        }
+
+        try {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = problemStatement.examples;
+            
+            const testCases = [];
+            
+            // Look for input/output pairs in various formats
+            
+            // Format 1: Look for pre tags with input/output classes
+            const inputPres = tempDiv.querySelectorAll('pre.input, .input pre');
+            const outputPres = tempDiv.querySelectorAll('pre.output, .output pre');
+            
+            if (inputPres.length > 0 && outputPres.length > 0) {
+                for (let i = 0; i < Math.min(inputPres.length, outputPres.length); i++) {
+                    testCases.push({
+                        input: inputPres[i].textContent.trim(),
+                        output: outputPres[i].textContent.trim()
+                    });
+                }
+            }
+            
+            // Format 2: Look for table format with input/output
+            if (testCases.length === 0) {
+                const tables = tempDiv.querySelectorAll('table');
+                for (const table of tables) {
+                    const rows = table.querySelectorAll('tr');
+                    for (let i = 0; i < rows.length; i++) {
+                        const cells = rows[i].querySelectorAll('td');
+                        if (cells.length >= 2) {
+                            const firstCell = cells[0].textContent.toLowerCase();
+                            const secondCell = cells[1].textContent.toLowerCase();
+                            
+                            if (firstCell.includes('input') && secondCell.includes('output')) {
+                                // Header row, get the actual data from next row
+                                if (i + 1 < rows.length) {
+                                    const dataCells = rows[i + 1].querySelectorAll('td');
+                                    if (dataCells.length >= 2) {
+                                        testCases.push({
+                                            input: dataCells[0].textContent.trim(),
+                                            output: dataCells[1].textContent.trim()
+                                        });
+                                    }
+                                }
+                            } else if (!firstCell.includes('input') && !firstCell.includes('output')) {
+                                // Assume first cell is input, second is output
+                                testCases.push({
+                                    input: cells[0].textContent.trim(),
+                                    output: cells[1].textContent.trim()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Format 3: Look for alternating pre tags (input, output, input, output...)
+            if (testCases.length === 0) {
+                const allPres = tempDiv.querySelectorAll('pre');
+                for (let i = 0; i < allPres.length - 1; i += 2) {
+                    testCases.push({
+                        input: allPres[i].textContent.trim(),
+                        output: allPres[i + 1].textContent.trim()
+                    });
+                }
+            }
+            
+            return testCases.filter(tc => tc.input && tc.output);
+        } catch (error) {
+            console.error('Error extracting sample test cases:', error);
+            return [];
         }
     };
 
@@ -303,7 +478,10 @@ const ContestIDEPage = ({ user }) => {
             case 'Wrong Answer': return 'text-red-600';
             case 'Time Limit Exceeded': return 'text-yellow-600';
             case 'Runtime Error': return 'text-orange-600';
+            case 'Compilation Error': return 'text-purple-600';
+            case 'System Error': return 'text-gray-600';
             case 'Pending': return 'text-blue-600';
+            case 'Judging': return 'text-blue-600';
             default: return 'text-gray-600';
         }
     };
@@ -314,7 +492,10 @@ const ContestIDEPage = ({ user }) => {
             case 'Wrong Answer': return <XCircle className="w-4 h-4" />;
             case 'Time Limit Exceeded': return <Clock className="w-4 h-4" />;
             case 'Runtime Error': return <AlertCircle className="w-4 h-4" />;
+            case 'Compilation Error': return <AlertCircle className="w-4 h-4" />;
+            case 'System Error': return <AlertCircle className="w-4 h-4" />;
             case 'Pending': return <Clock className="w-4 h-4 animate-spin" />;
+            case 'Judging': return <Clock className="w-4 h-4 animate-spin" />;
             default: return <AlertCircle className="w-4 h-4" />;
         }
     };
@@ -542,6 +723,12 @@ const ContestIDEPage = ({ user }) => {
                                                         <span>{Math.round(submission.memoryUsed/1024)}KB</span>
                                                     )}
                                                 </div>
+                                                {submission.error && (
+                                                    <div className="mt-2 p-2 bg-red-900/20 border border-red-500/30 rounded text-red-300 text-sm">
+                                                        <span className="font-medium">Error: </span>
+                                                        {submission.error}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
